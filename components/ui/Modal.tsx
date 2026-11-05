@@ -8,7 +8,7 @@
  * - Focus returns to trigger element on close
  * - Escape key closes modal
  */
-import React, { useId, useCallback, useEffect } from 'react';
+import React, { useId, useCallback, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { FocusTrap, useFocusReturn } from '@/lib/a11y';
@@ -107,9 +107,20 @@ export const Modal: React.FC<ModalProps> = ({
     onClose();
   }, [onClose]);
 
-  // Handle backdrop click
+  // Handle backdrop click.
+  // Só fecha se o clique COMEÇOU e TERMINOU no fundo. Sem isto, selecionar texto
+  // num campo e soltar o rato fora do painel dispara um `click` no fundo (ancestral
+  // comum) e fecha o modal, perdendo o que foi preenchido.
+  const mouseDownOnBackdrop = useRef(false);
+
+  const handleBackdropMouseDown = useCallback((e: React.MouseEvent) => {
+    mouseDownOnBackdrop.current = e.target === e.currentTarget;
+  }, []);
+
   const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
+    const startedOnBackdrop = mouseDownOnBackdrop.current;
+    mouseDownOnBackdrop.current = false;
+    if (startedOnBackdrop && e.target === e.currentTarget) {
       onClose();
     }
   }, [onClose]);
@@ -119,6 +130,7 @@ export const Modal: React.FC<ModalProps> = ({
   const content = (
     <div
       className={MODAL_OVERLAY_CLASS}
+      onMouseDown={handleBackdropMouseDown}
       onClick={handleBackdropClick}
       aria-hidden="false"
     >

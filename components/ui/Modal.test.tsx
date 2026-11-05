@@ -149,6 +149,29 @@ describe('Modal', () => {
         expect(onClose).toHaveBeenCalledTimes(1);
       }
     });
+
+    it('should NOT close when a drag (e.g. text selection) starts inside the dialog and ends on the backdrop', () => {
+      const onClose = vi.fn();
+      const { container } = render(<Modal {...defaultProps} onClose={onClose} />);
+      const backdrop = container.querySelector('.fixed.inset-0') as HTMLElement;
+
+      // mousedown dentro do painel, mouseup/click no fundo (soltar o rato fora após selecionar texto)
+      fireEvent.mouseDown(screen.getByRole('dialog'));
+      fireEvent.click(backdrop);
+
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('should close when mousedown and click both happen on the backdrop', () => {
+      const onClose = vi.fn();
+      const { container } = render(<Modal {...defaultProps} onClose={onClose} />);
+      const backdrop = container.querySelector('.fixed.inset-0') as HTMLElement;
+
+      fireEvent.mouseDown(backdrop);
+      fireEvent.click(backdrop);
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('Content', () => {
