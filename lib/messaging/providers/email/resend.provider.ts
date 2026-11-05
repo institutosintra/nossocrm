@@ -145,6 +145,17 @@ export class ResendEmailProvider extends BaseChannelProvider {
       const response = await this.client!.domains.list();
 
       if (response.error) {
+        // API keys com permissão "Sending access" não podem listar domínios:
+        // o Resend responde 401 `restricted_api_key`. A key é válida (foi
+        // autenticada) e serve para enviar emails, então tratamos como conectado.
+        if (response.error.name === 'restricted_api_key') {
+          return {
+            status: 'connected',
+            message: 'API key válida (acesso restrito a envio)',
+            details: { fromEmail: this.fromEmail, sendingOnly: true },
+          };
+        }
+
         return {
           status: 'error',
           message: response.error.message,
