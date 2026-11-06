@@ -238,15 +238,29 @@ export function useToggleChannelStatusMutation() {
       channelId: string;
       connect: boolean;
     }): Promise<MessagingChannel> => {
-      const { data, error } = await supabase
-        .from('messaging_channels')
-        .update({
-          status: connect ? 'connecting' : 'disconnected',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', channelId)
-        .select('*')
-        .single();
+      if (connect) {
+        // Valida no servidor (email: chama a API do provider) e grava o status final.
+        const res = await fetch(`/api/messaging/channels/${channelId}/connect`, {
+          method: 'POST',
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || 'Falha ao conectar canal');
+        }
+        const result = (await res.json()) as { status: string; message?: string };
+        if (result.status === 'error') {
+          throw new Error(result.message || 'Falha ao conectar canal');
+        }
+      }
+
+      const query = supabase.from('messaging_channels');
+      const { data, error } = await (connect
+        ? query.select('*').eq('id', channelId).single()
+        : query
+            .update({ status: 'disconnected', updated_at: new Date().toISOString() })
+            .eq('id', channelId)
+            .select('*')
+            .single());
 
       if (error) throw error;
 

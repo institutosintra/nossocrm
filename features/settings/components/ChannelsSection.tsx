@@ -484,7 +484,7 @@ function ChannelCard({
             </button>
             <button
               onClick={onToggle}
-              disabled={isLoading || isConnecting}
+              disabled={isLoading}
               className={cn(
                 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50',
                 isConnected
@@ -761,11 +761,16 @@ export function ChannelsSection() {
         connect: !isConnected,
       });
       addToast(
-        isConnected ? 'Canal desconectado.' : 'Conectando canal...',
+        isConnected ? 'Canal desconectado.' : 'Canal conectado.',
         'success'
       );
-    } catch {
-      addToast('Erro ao alterar status do canal.', 'error');
+    } catch (error) {
+      addToast(
+        error instanceof Error && error.message
+          ? `Erro ao alterar status do canal: ${error.message}`
+          : 'Erro ao alterar status do canal.',
+        'error'
+      );
     }
   };
 

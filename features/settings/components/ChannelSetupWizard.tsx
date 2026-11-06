@@ -1098,10 +1098,29 @@ export function ChannelSetupWizard({
     setTestResult(null);
 
     try {
-      // Simulate API call - in production, this would call the provider's test endpoint
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Email (Resend): valida a API key de verdade no servidor.
+      if (channelType === 'email' && provider && isCredentialsValid) {
+        const res = await fetch('/api/messaging/channels/test', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            channel_type: channelType,
+            provider,
+            external_identifier: externalIdentifier.trim(),
+            credentials,
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        setTestResult({
+          success: res.ok && !!body.success,
+          message:
+            body.message || body.error || (res.ok ? 'Conexão validada.' : 'Erro ao testar conexão.'),
+        });
+        return;
+      }
 
-      // For now, just check if credentials are filled
+      // Demais providers: apenas checa se as credenciais estão preenchidas
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       if (isCredentialsValid) {
         setTestResult({
           success: true,
